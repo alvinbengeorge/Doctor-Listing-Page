@@ -1,103 +1,160 @@
-import Image from "next/image";
+"use client"
+import { useEffect, useState } from "react";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Search } from "lucide-react";
 
-export default function Home() {
+export default function DoctorBooking() {
+  interface Doctor {
+    id: string;
+    name: string;
+    specialities: { name: string }[];
+    experience: string;
+    clinic: {
+      name: string;
+      address: {
+        locality: string;
+      };
+    };
+    fees: string;
+  }
+
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [specialities, setSpecialities] = useState<string[]>([]);
+  const [selectedSpecialities, setSelectedSpecialities] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Fetch data from the API
+    fetch("https://srijandubey.github.io/campus-api-mock/SRM-C1-25.json")
+      .then((response) => response.json())
+      .then((data) => {
+        const uniqueSpecialities = Array.from(new Set(data.flatMap((doc: Doctor) => doc.specialities.map((s) => s.name))));
+        setSpecialities(uniqueSpecialities as string[]);
+        setDoctors(data)
+      })
+      .catch((error) => console.error("Error fetching doctors:", error));
+  }, []);
+
+  const handleSpecialityChange = (speciality: string) => {
+    setSelectedSpecialities((prev) =>
+      prev.includes(speciality)
+        ? prev.filter((s) => s !== speciality)
+        : [...prev, speciality]
+    );
+  };
+
+  const filteredDoctors = selectedSpecialities.length
+    ? doctors.filter((doc) =>
+        doc.specialities.some((s) => selectedSpecialities.includes(s.name))
+      )
+    : doctors;
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="flex min-h-screen bg-gray-100">
+      {/* Sidebar */}
+      <aside className="w-64 p-4 space-y-6 border-r bg-white rounded-r-2xl">
+        <div className="bg-gray-200 p-4 rounded-lg">
+          <h2 className="font-semibold mb-2">Sort by</h2>
+          <RadioGroup defaultValue="price">
+            <label className="flex items-center space-x-2">
+              <RadioGroupItem value="price" id="price" className="text-gray-800" />
+              <span className="text-sm text-gray-800">Price: Low-High</span>
+            </label>
+            <label className="flex items-center space-x-2">
+              <RadioGroupItem value="experience" id="experience" className="text-gray-800" />
+              <span className="text-sm text-gray-800">Experience: Most Experience first</span>
+            </label>
+          </RadioGroup>
+        </div>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <div>
+          <h2 className="font-semibold mb-2">Filters</h2>
+          <div className="space-y-4">
+            <div className="bg-gray-200 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-1">Specialities</h3>
+              <Input placeholder="Search" className="mb-2" />
+              <ScrollArea className="h-32">
+                <div className="space-y-2">
+                  {specialities.map((speciality) => (
+                    <div key={speciality} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={speciality}
+                        checked={selectedSpecialities.includes(speciality)}
+                        onChange={() => handleSpecialityChange(speciality)}
+                      />
+                      <label htmlFor={speciality} className="text-sm">{speciality}</label>
+                    </div>
+                  ))}
+                </div>
+              </ScrollArea>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 w-full"
+                onClick={() => setSelectedSpecialities([])}
+              >
+                Clear All Filters
+              </Button>
+            </div>
+
+            <div className="bg-gray-200 p-4 rounded-lg">
+              <h3 className="text-sm font-medium mb-1">Mode of consultation</h3>
+              <RadioGroup defaultValue="in-clinic" className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="video" id="video" />
+                  <label htmlFor="video" className="text-sm">Video Consultation</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="in-clinic" id="in-clinic" />
+                  <label htmlFor="in-clinic" className="text-sm">In-clinic Consultation</label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="all" id="all" />
+                  <label htmlFor="all" className="text-sm">All</label>
+                </div>
+              </RadioGroup>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content */}
+      <main className="flex-1 p-6 space-y-6">
+        {/* Search */}
+        <div className="flex items-center gap-4 mb-4">
+          <Input placeholder="Search Symptoms, Doctors, Specialists, Clinics" className="flex-1" />
+          <Button variant="outline" size="icon">
+            <Search className="h-5 w-5" />
+          </Button>
+        </div>
+
+        {/* Doctor Cards */}
+        <div className="space-y-4">
+          {filteredDoctors.length > 0 ? (
+            filteredDoctors.map((doc) => (
+              <Card key={doc.id} className="flex justify-between items-center p-4 text-left">
+                <div>
+                  <h3 className="font-semibold">{doc.name}</h3>
+                  <p className="text-sm text-gray-500">{doc.specialities.map((s) => s.name).join(", ")}</p>
+                  <p className="text-sm">{doc.experience}</p>
+                  <p className="text-sm">{doc.clinic.name}</p>
+                  <p className="text-sm text-gray-500">{doc.clinic.address.locality}</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-bold mb-2">{doc.fees}</p>
+                  <Button variant="outline">Book Appointment</Button>
+                </div>
+              </Card>
+            ))
+          ) : (
+            <p>No doctors match the selected filters.</p>
+          )}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
     </div>
   );
 }
