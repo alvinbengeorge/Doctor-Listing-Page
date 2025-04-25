@@ -27,6 +27,7 @@ export default function DoctorBooking() {
   const [doctors, setDoctors] = useState<Doctor[]>([]);
   const [specialities, setSpecialities] = useState<string[]>([]);
   const [selectedSpecialities, setSelectedSpecialities] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(true); // Track loading state
 
   useEffect(() => {
     // Fetch data from the API
@@ -36,8 +37,12 @@ export default function DoctorBooking() {
         const uniqueSpecialities = Array.from(new Set(data.flatMap((doc: Doctor) => doc.specialities.map((s) => s.name))));
         setSpecialities(uniqueSpecialities as string[]);
         setDoctors(data);
+        setIsLoading(false); // Data has been loaded
       })
-      .catch((error) => console.error("Error fetching doctors:", error));
+      .catch((error) => {
+        console.error("Error fetching doctors:", error);
+        setIsLoading(false); // Stop loading even if there's an error
+      });
   }, []);
 
   const handleSpecialityChange = (speciality: string) => {
@@ -53,6 +58,10 @@ export default function DoctorBooking() {
         doc.specialities.some((s) => selectedSpecialities.includes(s.name))
       )
     : doctors;
+
+  if (isLoading) {
+    return <div>Loading...</div>; // Show a loading state while fetching data
+  }
 
   return (
     <div className="flex min-h-screen bg-gray-100">
