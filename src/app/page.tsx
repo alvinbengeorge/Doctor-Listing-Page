@@ -14,13 +14,14 @@ export default function DoctorBooking() {
     name: string;
     specialities: { name: string }[];
     experience: string;
+    fees: string;
+    photo: string; // Added photo property
     clinic: {
       name: string;
       address: {
         locality: string;
       };
     };
-    fees: string;
   }
 
   const [doctors, setDoctors] = useState<Doctor[]>([]);
@@ -34,7 +35,7 @@ export default function DoctorBooking() {
       .then((data) => {
         const uniqueSpecialities = Array.from(new Set(data.flatMap((doc: Doctor) => doc.specialities.map((s) => s.name))));
         setSpecialities(uniqueSpecialities as string[]);
-        setDoctors(data)
+        setDoctors(data);
       })
       .catch((error) => console.error("Error fetching doctors:", error));
   }, []);
@@ -58,25 +59,25 @@ export default function DoctorBooking() {
       {/* Sidebar */}
       <aside className="w-64 p-4 space-y-6 border-r bg-white rounded-r-2xl">
         <div className="bg-gray-200 p-4 rounded-lg">
-          <h2 className="font-semibold mb-2">Sort by</h2>
+          <h2 className="font-semibold mb-2" data-testid="filter-header-sort">Sort by</h2>
           <RadioGroup defaultValue="price">
             <label className="flex items-center space-x-2">
-              <RadioGroupItem value="price" id="price" className="text-gray-800" />
+              <RadioGroupItem value="price" id="price" className="text-gray-800" data-testid="sort-fees" />
               <span className="text-sm text-gray-800">Price: Low-High</span>
             </label>
             <label className="flex items-center space-x-2">
-              <RadioGroupItem value="experience" id="experience" className="text-gray-800" />
+              <RadioGroupItem value="experience" id="experience" className="text-gray-800" data-testid="sort-experience" />
               <span className="text-sm text-gray-800">Experience: Most Experience first</span>
             </label>
           </RadioGroup>
         </div>
 
         <div>
-          <h2 className="font-semibold mb-2">Filters</h2>
+          <h2 className="font-semibold mb-2" data-testid="filter-header-speciality">Filters</h2>
           <div className="space-y-4">
             <div className="bg-gray-200 p-4 rounded-lg">
               <h3 className="text-sm font-medium mb-1">Specialities</h3>
-              <Input placeholder="Search" className="mb-2" />
+              <Input placeholder="Search" className="mb-2" data-testid="autocomplete-input" />
               <ScrollArea className="h-32">
                 <div className="space-y-2">
                   {specialities.map((speciality) => (
@@ -85,6 +86,7 @@ export default function DoctorBooking() {
                         id={speciality}
                         checked={selectedSpecialities.includes(speciality)}
                         onChange={() => handleSpecialityChange(speciality)}
+                        data-testid={`filter-specialty-${speciality.replace(/\s+/g, "-")}`}
                       />
                       <label htmlFor={speciality} className="text-sm">{speciality}</label>
                     </div>
@@ -102,19 +104,15 @@ export default function DoctorBooking() {
             </div>
 
             <div className="bg-gray-200 p-4 rounded-lg">
-              <h3 className="text-sm font-medium mb-1">Mode of consultation</h3>
+              <h3 className="text-sm font-medium mb-1" data-testid="filter-header-moc">Mode of consultation</h3>
               <RadioGroup defaultValue="in-clinic" className="space-y-2">
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="video" id="video" />
+                  <RadioGroupItem value="video" id="video" data-testid="filter-video-consult" />
                   <label htmlFor="video" className="text-sm">Video Consultation</label>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="in-clinic" id="in-clinic" />
+                  <RadioGroupItem value="in-clinic" id="in-clinic" data-testid="filter-in-clinic" />
                   <label htmlFor="in-clinic" className="text-sm">In-clinic Consultation</label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="all" id="all" />
-                  <label htmlFor="all" className="text-sm">All</label>
                 </div>
               </RadioGroup>
             </div>
@@ -126,7 +124,7 @@ export default function DoctorBooking() {
       <main className="flex-1 p-6 space-y-6">
         {/* Search */}
         <div className="flex items-center gap-4 mb-4">
-          <Input placeholder="Search Symptoms, Doctors, Specialists, Clinics" className="flex-1" />
+          <Input placeholder="Search Symptoms, Doctors, Specialists, Clinics" className="flex-1" data-testid="autocomplete-input" />
           <Button variant="outline" size="icon">
             <Search className="h-5 w-5" />
           </Button>
@@ -136,16 +134,23 @@ export default function DoctorBooking() {
         <div className="space-y-4">
           {filteredDoctors.length > 0 ? (
             filteredDoctors.map((doc) => (
-              <Card key={doc.id} className="flex justify-between items-center p-4 text-left">
-                <div>
-                  <h3 className="font-semibold">{doc.name}</h3>
-                  <p className="text-sm text-gray-500">{doc.specialities.map((s) => s.name).join(", ")}</p>
-                  <p className="text-sm">{doc.experience}</p>
-                  <p className="text-sm">{doc.clinic.name}</p>
-                  <p className="text-sm text-gray-500">{doc.clinic.address.locality}</p>
+              <Card key={doc.id} className=" p-4 text-left" data-testid="doctor-card">
+                <div className="flex items-center space-x-4">
+                  <img
+                    src={doc.photo}
+                    alt={`${doc.name}'s photo`}
+                    className="w-16 h-16 rounded-full"
+                  />
+                  <div>
+                    <h3 className="font-semibold" data-testid="doctor-name">{doc.name}</h3>
+                    <p className="text-sm text-gray-500" data-testid="doctor-specialty">{doc.specialities.map((s) => s.name).join(", ")}</p>
+                    <p className="text-sm" data-testid="doctor-experience">{doc.experience}</p>
+                    <p className="text-sm">{doc.clinic.name}</p>
+                    <p className="text-sm text-gray-500">{doc.clinic.address.locality}</p>
+                  </div>
                 </div>
-                <div className="text-center">
-                  <p className="font-bold mb-2">{doc.fees}</p>
+                <div className="text-right mt-4">
+                  <p className="font-bold mb-2 pe-4" data-testid="doctor-fee">{doc.fees}</p>
                   <Button variant="outline">Book Appointment</Button>
                 </div>
               </Card>
